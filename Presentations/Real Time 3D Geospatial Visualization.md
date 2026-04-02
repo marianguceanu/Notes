@@ -1,34 +1,41 @@
-# Real Time 3D Geospatial Visualization (in the web)
+# 0. Real Time 3D Geospatial Visualization (in the web)
 - Interesting but why/how/when?
 
 ---
 
 <!--toc:start-->
-- [Real Time 3D Geospatial Visualization (in the web)](#real-time-3d-geospatial-visualization-in-the-web)
-- [History, demand, approach](#history-demand-approach)
-  - [It started with 2D GIS (Geographic Information System)](#it-started-with-2d-gis-geographic-information-system)
-  - [What was the demand (Limitations of 2D GIS's / What it couldn't do)](#what-was-the-demand-limitations-of-2d-giss-what-it-couldnt-do)
-    - [First implementation](#first-implementation)
-  - [The turning point](#the-turning-point)
-  - [Data Explosion](#data-explosion)
-- [Technicalities](#technicalities)
-  - [Main issue](#main-issue)
-  - [Break it all](#break-it-all)
-  - [LOD - Critical](#lod-critical)
-  - [Frustum culling](#frustum-culling)
-  - [Data Streaming (But how, geometrically speaking)](#data-streaming-but-how-geometrically-speaking)
-  - [GPU Rendering](#gpu-rendering)
-- [How does Cesium do it?](#how-does-cesium-do-it)
-  - [3D Tiles Structure](#3d-tiles-structure)
+- [0. Real Time 3D Geospatial Visualization (in the web)](#0-real-time-3d-geospatial-visualization-in-the-web)
+- [1. History, demand, approach](#1-history-demand-approach)
+  - [1.1 It started with 2D GIS (Geographic Information System)](#11-it-started-with-2d-gis-geographic-information-system)
+  - [1.2 What was the demand (Limitations of 2D GIS's / What it couldn't do)](#12-what-was-the-demand-limitations-of-2d-giss-what-it-couldnt-do)
+    - [1.2.1 First implementation](#121-first-implementation)
+  - [1.3 The turning point](#13-the-turning-point)
+  - [1.4 Data Explosion](#14-data-explosion)
+- [2. Technicalities](#2-technicalities)
+  - [2.1 Main issue](#21-main-issue)
+  - [2.2 Break it all](#22-break-it-all)
+  - [2.3 LOD - Critical](#23-lod-critical)
+  - [2.4 Frustum culling](#24-frustum-culling)
+  - [2.5 Data Streaming (But how, geometrically speaking)](#25-data-streaming-but-how-geometrically-speaking)
+  - [2.6 GPU Rendering](#26-gpu-rendering)
+- [3. How does Cesium do it?](#3-how-does-cesium-do-it)
+  - [3.1 3D Tiles Structure](#31-3d-tiles-structure)
+  - [3.2 The Traversal / Selection  Algorithm](#32-the-traversal-selection-algorithm)
+  - [3.3 Screen Space Error (SSE) and Geometric Error (GE)](#33-screen-space-error-sse-and-geometric-error-ge)
+  - [3.4 Refinement strategies](#34-refinement-strategies)
+  - [3.5 Bounding Volumes](#35-bounding-volumes)
+  - [3.6 Real Bottlenecks (What Actually Hurts Performance)](#36-real-bottlenecks-what-actually-hurts-performance)
+- [4. CONCLUSION](#4-conclusion)
+  - [3D Tiles rendering is a continuous optimization problem solved every frame based on camera state.](#3d-tiles-rendering-is-a-continuous-optimization-problem-solved-every-frame-based-on-camera-state)
 <!--toc:end-->
 
 
 ---
 
-# History, demand, approach
+# 1. History, demand, approach
 Let's look closely
 
-## It started with 2D GIS (Geographic Information System)
+## 1.1 It started with 2D GIS (Geographic Information System)
 - Layered data (roads, buildings, terrain)
 - Used vector + raster formats
 - Some of the first tools:
@@ -38,18 +45,18 @@ Let's look closely
 
 ---
 
-## What was the demand (Limitations of 2D GIS's / What it couldn't do)
+## 1.2 What was the demand (Limitations of 2D GIS's / What it couldn't do)
 - Elevation
 - Height
 - Visibility / Line of sight
 
-### First implementation
+### 1.2.1 First implementation
 - Done in 2001 by [Keyhole Inc.](https://www.gearthblog.com/blog/archives/2012/07/google_earth_a_to_z_keyhole_and_kml.html) 
 - It one-upped the 2D GIS 
 
 ---
 
-## The turning point
+## 1.3 The turning point
 - Google acquired Keyhole and developed it into *Google Earth*
 - Now we have the first 3D globe
 - Intuitive geospatial data
@@ -58,7 +65,7 @@ Let's look closely
 
 ---
 
-## Data Explosion
+## 1.4 Data Explosion
 - Now: there is *too much* data 
 - Data sources: LiDAR scans (billions of points), drones, satellites, IoT
 - **CHALLENGE**: Datasets in TB range -> real-time streaming, rendering in browsers
@@ -66,12 +73,12 @@ Let's look closely
 
 ---
 
-# Technicalities
+# 2. Technicalities
 - Let's look under the hood and see how this is done
 
 ---
 
-## Main issue
+## 2.1 Main issue
 - You **CAN NOT** load everything at once
 - Realistic datasets examples: City-scale 3D model, Point Cloud, Terrain (multi-res meshes)
 - The constraints are real hard:
@@ -84,7 +91,7 @@ Let's look closely
 
 ---
 
-## Break it all
+## 2.2 Break it all
 - Now we do *Spatial Partitioning*: split the data into manageable chunks
     - Quadtrees (2D)
     - Octrees (3D)
@@ -94,7 +101,7 @@ Let's look closely
 
 ---
 
-## LOD - Critical
+## 2.3 LOD - Critical
 - What is LOD in a nuthsell:
     - Far away - low detail 
     - Close - high detail
@@ -105,7 +112,7 @@ Let's look closely
 
 ---
 
-## Frustum culling
+## 2.4 Frustum culling
 - Principle: don't render what you can't see
 - Camera sees a pyramid, that is named [frustum](https://learnopengl.com/Guest-Articles/2021/Scene/Frustum-Culling)
 - Anything outside: not loaded / rendered, else loaded
@@ -115,7 +122,7 @@ Let's look closely
 
 ---
 
-## Data Streaming (But how, geometrically speaking)
+## 2.5 Data Streaming (But how, geometrically speaking)
 - Data is fetched on demand based on camera position
 - Mechanism is: 3D Tiles
     - Hierarchical Tiles
@@ -130,7 +137,7 @@ Let's look closely
 
 ---
 
-## GPU Rendering
+## 2.6 GPU Rendering
 - Rendering is indeed done using GPU
 - How? **WebGL** (There is also *WebGPU* emerging)
 - Why the GPU for the browser?
@@ -144,12 +151,12 @@ Let's look closely
 
 ---
 
-# How does Cesium do it?
+# 3. How does Cesium do it?
 - Most 'production-ready' framework, also most restrictive
 
 ---
 
-## 3D Tiles Structure
+## 3.1 3D Tiles Structure
 - This is the thing we're actually streaming
 <br>
 Core pieces:
@@ -172,5 +179,80 @@ Core pieces:
 
 ---
 
-## The Traversal Algorithm
-- [Image example, slide 5](https://www.slideserve.com/gefen/chc-coherent-hierarchical-culling-revisited-powerpoint-ppt-presentation)
+## 3.2 The Traversal / Selection  Algorithm
+- [Example](https://cesium.com/learn/cesium-native/ref-doc/selection-algorithm-details.html)
+```md
+Root tile
+    ↓
+Check if visible
+    ↓
+If not visible → Discard
+    ↓
+If visible:
+    Check LOD (Geometric error vs Screen size)
+        ↓
+    If good enough → Render this tile
+    Else → Refine (load children)
+```
+---
+
+## 3.3 Screen Space Error (SSE) and Geometric Error (GE)
+[GE](https://www.sensat.co/news/tessera-how-to-calculate-geometric-error-in-3d-tiles)
+
+[SSE in relation with GE](https://www.programmersought.com/article/13969093609/)
+- SSE is computed by the engine in relation based on GE
+- This is how the engine decides: 'Is this detailed enough?'
+    - ***Q***: How? ***A***: Project said GE into screen space (pixels basically)
+- Key points:
+    - SSE <= threshold (user-defined, can be dynamic) => Refine (load children)
+    - SSE > threshold => render current tile
+- This is the main cause of: 
+    - Zoom in -> more data (more detailed)
+    - Zooming out -> less data (less detailed)
+
+---
+
+## 3.4 Refinement strategies
+- **REPLACE**
+    - Parent disappears when children load
+- **ADD**
+    - Children are added on top of the parents
+    - Smoother transitions
+    - Often used in Point Clouds
+
+---
+
+## 3.5 Bounding Volumes
+- Each tile has a bounding volume:
+    - Box
+    - Sphere
+    - Region (lat/lon/height)
+- Where it used:
+    - Frustum culling
+    - Distance estimation (for SSE)
+    - Refinement decisions
+- If the bounding volumes are incorrect, everything can break (bad culling, wrongful LOD)
+
+---
+
+## 3.6 Real Bottlenecks (What Actually Hurts Performance)
+
+- CPU:
+    - Traversal every frame
+    - JSON parsing 
+- GPU:
+    - Too many draw calls
+    - Heavy shaders
+    - Large vertex buffers (too big of a vertex count)
+- Network:
+    - Latency
+    - Too many small requests
+- Memory:
+    - Cache limits
+    - GPU buffer exhaustion
+
+---
+
+# 4. CONCLUSION
+
+## 3D Tiles rendering is a continuous optimization problem solved every frame based on camera state.
