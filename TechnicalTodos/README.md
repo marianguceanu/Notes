@@ -1,5 +1,5 @@
 > # General info
-> This is a place where I note down whatever it is I need to focus on more
+> This is a place where I note down whatever it is I need to focus on more.
 > It will continously adapt to fit everything there is for me to develop and focus on.
 
 ## Programming languages  
