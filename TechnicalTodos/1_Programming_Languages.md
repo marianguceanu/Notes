@@ -21,5 +21,32 @@
 > ## C++
 > Particularities 
 - Rule of five
-- ODR
+    - Destructor:               ```~ClassName()```
+    - Copy constructor:         ```ClassName(const ClassName& other)```
+    - Copy assignment operator: ```ClassName& operator=(const ClassName& other)```
+    - Move constructor:         ```ClassName(ClassName&& other) noexcept //“noexcept” -> does not throw any exceptions```
+    - Move assignment operator: ```ClassName& operator=(ClassName&& other) noexcept```
+- ODR (One Definition Rule)
+    - Class, Struct, Non-Inline Function, or Object - one definition in the entire program
+    - Templates, types - one definition per translation unit
 
+## JS / Python (languages with garbage collector, named GC)
+- Memory management is automatic
+- GC reclaims unused memory
+- Developer productivity, safety are priority
+- You create objects, runtime decides:
+    - Where they live
+    - When to free
+    - How to optimize
+- Python and JS both use stack, heap, code segment
+- Almost all objects live on the heap
+- Stack is used for: 
+    - Function call frames
+    - Local references, pointers
+    - Temporary execution data
+- Python has a cyclic GC
+    - Periodically scans for unreachable cycles
+- JS GC is **Non-Deterministic**
+    - You do NOT know exactly *when* cleanup happens
+- Most modern JS engines use **generational GC**
+    - Objects surviving multiple GC cycles get promoted
